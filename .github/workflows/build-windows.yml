@@ -14,7 +14,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Remover e desativar dependência xpm-pixbuf
-      shell: msys2 {0}
+      shell: bash
       run: |
         rm -rf dia-master/subprojects/xpm-pixbuf
         sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false)/g" dia-master/meson.build
