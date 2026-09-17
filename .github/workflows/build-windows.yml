@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Checkout do código
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
@@ -30,17 +28,18 @@ jobs:
     - name: Compilar o Dia
       shell: msys2 {0}
       run: |
+        cd dia-master
         meson setup build-win
         ninja -C build-win
 
     - name: Compactar o executável gerado
       shell: msys2 {0}
       run: |
-        cd build-win/app
+        cd dia-master/build-win/app
         zip -r dia-windows.zip .
 
     - name: Disponibilizar para Download
       uses: actions/upload-artifact@v4
       with:
         name: Dia-Windows-Exe
-        path: build-win/app/dia-windows.zip
+        path: dia-master/build-win/app/dia-windows.zip
