@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Checkout do código
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
@@ -33,15 +31,15 @@ jobs:
       shell: msys2 {0}
       run: |
         cd dia-master
-        meson setup build-win -Dxpm-pixbuf=disabled
+        meson setup build-win --wrap-mode=nodownload
         ninja -C build-win
 
     - name: Empacotar executável com DLLs
       shell: msys2 {0}
       run: |
         cd dia-master/build-win/app
-        # Copia as DLLs do sistema para rodar portátil no Windows
-        cp /ucrt64/bin/*.dll .
+        # Copia as DLLs necessárias para rodar portátil
+        cp /ucrt64/bin/*.dll . 2>/dev/null || true
         zip -r dia-windows.zip .
 
     - name: Disponibilizar para Download
