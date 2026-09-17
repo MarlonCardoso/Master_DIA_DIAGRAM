@@ -33,7 +33,6 @@ jobs:
             mingw-w64-x86_64-libxml2
             mingw-w64-x86_64-libxslt
             mingw-w64-x86_64-gettext
-            mingw-w64-x86_64-poppler
             mingw-w64-x86_64-cairo
             mingw-w64-x86_64-pango
             mingw-w64-x86_64-gsl
@@ -47,7 +46,6 @@ jobs:
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
 
-          # Passa os argumentos de linkagem diretamente para o Meson exportar todos os símbolos nas DLLs
           meson setup builddir dia-master \
             --buildtype=release \
             -Dc_link_args="-Wl,--export-all-symbols -Wl,--enable-auto-import" \
