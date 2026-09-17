@@ -39,8 +39,6 @@ jobs:
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-appstream
             mingw-w64-x86_64-desktop-file-utils
-            mingw-w64-x86_64-python-gobject
-            mingw-w64-x86_64-ntldd
 
       - name: Configurar Meson
         shell: msys2 {0}
@@ -48,8 +46,10 @@ jobs:
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
 
+          # Substitui o bundler problemático por um script neutro
           if [ -f dia-master/build-aux/windows-bundler.sh ]; then
-            sed -i 's/set -e/set +e/g' dia-master/build-aux/windows-bundler.sh
+            printf '#!/bin/sh\nexit 0\n' > dia-master/build-aux/windows-bundler.sh
+            chmod +x dia-master/build-aux/windows-bundler.sh
           fi
 
           meson setup builddir dia-master \
@@ -63,16 +63,16 @@ jobs:
         run: |
           meson compile -C builddir || meson compile -C builddir -j 1
 
-      - name: Instalar no Diretório do Artefato
+      - name: Instalar e Copiar Dependências
         shell: msys2 {0}
         run: |
-          # Fecha o dia.exe automaticamente assim que ele for aberto pelo bundler
-          (while true; do taskkill //F //IM dia.exe 2>/dev/null || true; sleep 2; done) &
-          WATCHDOG_PID=$!
-
           meson install -C builddir --destdir output
 
-          kill -9 $WATCHDOG_PID 2>/dev/null || true
+          # Copia as DLLs do MSYS2 para junto do dia.exe para tornar a pasta portátil
+          BIN_DIR=$(find builddir/output -type d -name "bin" | head -n 1)
+          if [ -n "$BIN_DIR" ]; then
+            cp -u /mingw64/bin/*.dll "$BIN_DIR/" 2>/dev/null || true
+          fi
 
       - name: Upload do Artefato do Build
         uses: actions/upload-artifact@v4
