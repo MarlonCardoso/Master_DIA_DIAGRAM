@@ -38,6 +38,8 @@ jobs:
             mingw-w64-x86_64-pango
             mingw-w64-x86_64-gsl
             mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-appstream-glib
+            mingw-w64-x86_64-desktop-file-utils
 
       - name: Configurar Meson
         shell: msys2 {0}
