@@ -22,16 +22,15 @@ jobs:
           mingw-w64-ucrt-x86_64-toolchain
           mingw-w64-ucrt-x86_64-gtk3
           mingw-w64-ucrt-x86_64-graphene
+          mingw-w64-ucrt-x86_64-appstream
           mingw-w64-ucrt-x86_64-meson
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-libxml2
 
-    - name: Remover subprojeto quebrado
+    - name: Remover subprojeto quebrado e ajustar dependências
       shell: msys2 {0}
       run: |
-        # Remove a pasta vazia do subprojeto para o Meson não tentar ler um diretório incompleto
         rm -rf dia-master/subprojects/xpm-pixbuf
-        # Altera o meson.build para tornar a dependência xpm-pixbuf opcional/desativada
         sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false/g" dia-master/meson.build
 
     - name: Compilar o Dia
@@ -46,7 +45,7 @@ jobs:
       shell: msys2 {0}
       run: |
         cd dia-master/build-win/app
-        # Copia as DLLs do ambiente UCRT64 para o executável rodar de forma independente
+        # Copia todas as DLLs do ambiente UCRT64 para o executável rodar portátil no Windows 11
         cp /ucrt64/bin/*.dll . 2>/dev/null || true
         zip -r dia-windows.zip .
 
