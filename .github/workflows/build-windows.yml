@@ -13,11 +13,10 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v4
 
-- name: Remover e desativar dependência xpm-pixbuf
+    - name: Remover e desativar dependência xpm-pixbuf
       shell: msys2 {0}
       run: |
         rm -rf dia-master/subprojects/xpm-pixbuf
-        # Modifica o meson.build principal para forçar required: false e evitar subprojetos automáticos
         sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false)/g" dia-master/meson.build
 
     - name: Configurar MSYS2 no GitHub
