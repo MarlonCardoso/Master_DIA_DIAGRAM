@@ -31,14 +31,14 @@ jobs:
       shell: msys2 {0}
       run: |
         cd dia-master
-        meson setup build-win --wrap-mode=nodownload
+        meson setup build-win -Dxpm-pixbuf=disabled
         ninja -C build-win
 
     - name: Empacotar executável com DLLs
       shell: msys2 {0}
       run: |
         cd dia-master/build-win/app
-        # Copia as DLLs necessárias para rodar portátil
+        # Copia as DLLs necessárias do GTK/UCRT64 para o executável rodar portátil
         cp /ucrt64/bin/*.dll . 2>/dev/null || true
         zip -r dia-windows.zip .
 
