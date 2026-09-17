@@ -48,10 +48,8 @@ jobs:
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
 
-          # Torna o script de empacotamento tolerante a avisos para garantir a conclusão do install
           if [ -f dia-master/build-aux/windows-bundler.sh ]; then
             sed -i 's/set -e/set +e/g' dia-master/build-aux/windows-bundler.sh
-            echo "exit 0" >> dia-master/build-aux/windows-bundler.sh
           fi
 
           meson setup builddir dia-master \
@@ -68,7 +66,13 @@ jobs:
       - name: Instalar no Diretório do Artefato
         shell: msys2 {0}
         run: |
+          # Fecha o dia.exe automaticamente assim que ele for aberto pelo bundler
+          (while true; do taskkill //F //IM dia.exe 2>/dev/null || true; sleep 2; done) &
+          WATCHDOG_PID=$!
+
           meson install -C builddir --destdir output
+
+          kill -9 $WATCHDOG_PID 2>/dev/null || true
 
       - name: Upload do Artefato do Build
         uses: actions/upload-artifact@v4
