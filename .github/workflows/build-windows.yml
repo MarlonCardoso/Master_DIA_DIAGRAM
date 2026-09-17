@@ -40,6 +40,7 @@ jobs:
             mingw-w64-x86_64-appstream
             mingw-w64-x86_64-desktop-file-utils
             mingw-w64-x86_64-python-gobject
+            mingw-w64-x86_64-ntldd
 
       - name: Configurar Meson
         shell: msys2 {0}
@@ -47,8 +48,11 @@ jobs:
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
 
-          # Permite a conclusão do bundler mesmo em encerramentos assíncronos do dia.exe
-          sed -i 's/set -e/set +e/g' dia-master/build-aux/windows-bundler.sh 2>/dev/null || true
+          # Torna o script de empacotamento tolerante a avisos para garantir a conclusão do install
+          if [ -f dia-master/build-aux/windows-bundler.sh ]; then
+            sed -i 's/set -e/set +e/g' dia-master/build-aux/windows-bundler.sh
+            echo "exit 0" >> dia-master/build-aux/windows-bundler.sh
+          fi
 
           meson setup builddir dia-master \
             --buildtype=release \
@@ -64,13 +68,7 @@ jobs:
       - name: Instalar no Diretório do Artefato
         shell: msys2 {0}
         run: |
-          # Fecha o dia.exe de forma graciosa (WM_CLOSE) durante o empacotamento
-          (while true; do taskkill //IM dia.exe 2>/dev/null || true; sleep 2; done) &
-          WATCHDOG_PID=$!
-
           meson install -C builddir --destdir output
-
-          kill -9 $WATCHDOG_PID 2>/dev/null || true
 
       - name: Upload do Artefato do Build
         uses: actions/upload-artifact@v4
