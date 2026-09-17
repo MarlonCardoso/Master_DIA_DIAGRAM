@@ -13,15 +13,12 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v4
 
-    - name: Baixar o subprojeto xpm-pixbuf ausente
-      shell: bash
+- name: Remover e desativar dependência xpm-pixbuf
+      shell: msys2 {0}
       run: |
-        git clone https://gitlab.gnome.org/GNOME/dia.git temp-dia || true
-        # Se preferir clonar direto o subprojeto xpm-pixbuf se houver repositório público, ou clonar via git submodule se configurado:
-        mkdir -p dia-master/subprojects/xpm-pixbuf
-        # Alternativa robusta: baixar o arquivo xpm-pixbuf necessário ou clonar o repositório oficial do subprojeto
-        curl -L https://gitlab.gnome.org/GNOME/dia/-/raw/master/subprojects/xpm-pixbuf/xpm-pixbuf.h -o dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.h --create-dirs || true
-        curl -L https://gitlab.gnome.org/GNOME/dia/-/raw/master/subprojects/xpm-pixbuf/meson.build -o dia-master/subprojects/xpm-pixbuf/meson.build || true
+        rm -rf dia-master/subprojects/xpm-pixbuf
+        # Modifica o meson.build principal para forçar required: false e evitar subprojetos automáticos
+        sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false)/g" dia-master/meson.build
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
