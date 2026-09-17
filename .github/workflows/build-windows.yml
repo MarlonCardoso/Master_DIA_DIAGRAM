@@ -26,6 +26,7 @@ jobs:
           mingw-w64-ucrt-x86_64-meson
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-libxml2
+          diffutils
 
     - name: Remover subprojeto quebrado e ajustar dependências
       shell: msys2 {0}
@@ -38,7 +39,7 @@ jobs:
       run: |
         cd dia-master
         rm -rf build-win
-        meson setup build-win --wrap-mode=nodownload
+        meson setup build-win -Dtests=false --wrap-mode=nodownload
         ninja -C build-win
 
     - name: Empacotar para Windows 11 (Portátil com DLLs)
