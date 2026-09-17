@@ -12,12 +12,12 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout do código
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
 
-      - name: Setup MSYS2
+      - name: Configurar MSYS2 e Dependências
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -38,28 +38,25 @@ jobs:
             mingw-w64-x86_64-gsl
             mingw-w64-x86_64-zlib
 
-      - name: Configure Meson
+      - name: Configurar Meson
         shell: msys2 {0}
         run: |
-          # Disable strict GCC checks for legacy C code compatibility
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
 
-          # Configure Meson without requiring XSPLT docbook tools
-          meson setup builddir --buildtype=release -Ddoc=false
+          meson setup builddir dia-master --buildtype=release -Ddoc=false
 
-      - name: Compile Dia
+      - name: Compilar Dia
         shell: msys2 {0}
         run: |
-          # Try parallel build first; fallback to single-thread (-j 1) on failure to print clear error
           meson compile -C builddir || meson compile -C builddir -j 1
 
-      - name: Install to Staging Directory
+      - name: Instalar no Diretório do Artefato
         shell: msys2 {0}
         run: |
           meson install -C builddir --destdir output
 
-      - name: Upload Build Artifacts
+      - name: Upload do Artefato do Build
         uses: actions/upload-artifact@v4
         with:
           name: Dia-Windows-x64-Build
