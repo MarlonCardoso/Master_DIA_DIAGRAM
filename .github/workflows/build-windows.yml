@@ -13,11 +13,39 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v4
 
-    - name: Remover e desativar dependência xpm-pixbuf
+    - name: Criar subprojeto xpm-pixbuf localmente
       shell: bash
       run: |
-        rm -rf dia-master/subprojects/xpm-pixbuf
-        sed -i "s/dependency('xpm-pixbuf')/dependency('xpm-pixbuf', required: false)/g" dia-master/meson.build
+        mkdir -p dia-master/subprojects/xpm-pixbuf
+        
+        # Cria o meson.build do subprojeto
+        cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/meson.build
+        project('xpm-pixbuf', 'c')
+        xpm_sources = ['xpm-pixbuf.c']
+        xpm_dep = declare_dependency(
+          include_directories : include_directories('.'),
+          sources : xpm_sources
+        )
+        EOF
+
+        # Cria o cabeçalho xpm-pixbuf.h
+        cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.h
+        #ifndef XPM_PIXBUF_H
+        #define XPM_PIXBUF_H
+        #include <gdk-pixbuf/gdk-pixbuf.h>
+        G_BEGIN_DECLS
+        GdkPixbuf *xpm_pixbuf_load_from_data(const gchar *data[]);
+        G_END_DECLS
+        #endif
+        EOF
+
+        # Cria a implementação xpm-pixbuf.c
+        cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.c
+        #include "xpm-pixbuf.h"
+        GdkPixbuf *xpm_pixbuf_load_from_data(const gchar *data[]) {
+            return gdk_pixbuf_new_from_xpm_data(data);
+        }
+        EOF
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
