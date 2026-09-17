@@ -10,10 +10,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout do código (com submódulos)
+    - name: Checkout do código (sem submódulos automáticos)
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
+
+    - name: Baixar submódulo xpm-pixbuf manualmente
+      shell: bash
+      run: |
+        git submodule update --init dia-master/subprojects/xpm-pixbuf || true
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
