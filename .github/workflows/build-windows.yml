@@ -13,6 +13,16 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v4
 
+    - name: Baixar o subprojeto xpm-pixbuf ausente
+      shell: bash
+      run: |
+        git clone https://gitlab.gnome.org/GNOME/dia.git temp-dia || true
+        # Se preferir clonar direto o subprojeto xpm-pixbuf se houver repositório público, ou clonar via git submodule se configurado:
+        mkdir -p dia-master/subprojects/xpm-pixbuf
+        # Alternativa robusta: baixar o arquivo xpm-pixbuf necessário ou clonar o repositório oficial do subprojeto
+        curl -L https://gitlab.gnome.org/GNOME/dia/-/raw/master/subprojects/xpm-pixbuf/xpm-pixbuf.h -o dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.h --create-dirs || true
+        curl -L https://gitlab.gnome.org/GNOME/dia/-/raw/master/subprojects/xpm-pixbuf/meson.build -o dia-master/subprojects/xpm-pixbuf/meson.build || true
+
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
       with:
@@ -28,15 +38,6 @@ jobs:
           mingw-w64-ucrt-x86_64-libxml2
           diffutils
 
-    - name: Tratar subprojeto e ajustar dependências
-      shell: msys2 {0}
-      run: |
-        # Remove o diretório do subprojeto se estiver sem o meson.build
-        rm -rf dia-master/subprojects/xpm-pixbuf
-        
-        # Altera o meson.build para não travar na ausência do xpm-pixbuf
-        sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false/g" dia-master/meson.build
-
     - name: Compilar o Dia
       shell: msys2 {0}
       run: |
@@ -49,7 +50,6 @@ jobs:
       shell: msys2 {0}
       run: |
         cd dia-master/build-win/app
-        # Copia todas as DLLs do ambiente UCRT64 para o executável rodar de forma independente
         cp /ucrt64/bin/*.dll . 2>/dev/null || true
         zip -r dia-windows.zip .
 
