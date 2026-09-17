@@ -1,0 +1,253 @@
+/* Dia -- an diagram creation/manipulation program
+ * Copyright (C) 1998 Alexander Larsson
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include "config.h"
+
+#include <glib/gstdio.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+
+#include "dia-colour.h"
+
+
+G_DEFINE_BOXED_TYPE (DiaColour, dia_colour, dia_colour_copy, dia_colour_free)
+
+
+/**
+ * dia_colour_copy:
+ * @self: source #DiaColour
+ *
+ * Allocate a new colour equal to @self
+ *
+ * Since: 0.98
+ */
+DiaColour *
+dia_colour_copy (DiaColour *self)
+{
+  DiaColour *new;
+
+  g_return_val_if_fail (self != NULL, NULL);
+
+  new = g_new0 (DiaColour, 1);
+
+  new->red = self->red;
+  new->green = self->green;
+  new->blue = self->blue;
+  new->alpha = self->alpha;
+
+  return new;
+}
+
+
+/**
+ * dia_colour_free:
+ * @self: the #DiaColour
+ *
+ * Free a colour object
+ *
+ * Since: 0.98
+ */
+void
+dia_colour_free (DiaColour *self)
+{
+  g_clear_pointer (&self, g_free);
+}
+
+
+/**
+ * dia_colour_parse:
+ * @self: the #DiaColour
+ * @str: string to parse
+ *
+ * Set @self according to @str
+ *
+ * @str can be of the form
+ *
+ * \#RRGGBB or \#RRGGBBAA
+ *
+ * Since: 0.98
+ */
+void
+dia_colour_parse (DiaColour   *self,
+                  const char  *str)
+{
+  int r = 0, g = 0, b = 0, a = 255;
+
+  switch (strlen (str)) {
+    case 7:
+      if (sscanf (str, "#%2x%2x%2x", &r, &g, &b) != 3) {
+        g_return_if_reached ();
+      }
+      break;
+    case 9:
+      if (sscanf (str, "#%2x%2x%2x%2x", &r, &g, &b, &a) != 4) {
+        g_return_if_reached ();
+      }
+      break;
+    default:
+      g_return_if_reached ();
+  }
+
+  self->red = r / 255.0;
+  self->green = g / 255.0;
+  self->blue = b / 255.0;
+  self->alpha = a / 255.0;
+}
+
+
+/**
+ * dia_colour_to_string:
+ * @self: the #DiaColour
+ *
+ * Generate a string representation of @self
+ *
+ * Since: 0.98
+ *
+ * Returns: @self as \#RRGGBBAA
+ */
+char *
+dia_colour_to_string (DiaColour *self)
+{
+  return g_strdup_printf ("#%02X%02X%02X%02X",
+                          (guint) (CLAMP (self->red, 0.0, 1.0) * 255),
+                          (guint) (CLAMP (self->green, 0.0, 1.0) * 255),
+                          (guint) (CLAMP (self->blue, 0.0, 1.0) * 255),
+                          (guint) (CLAMP (self->alpha, 0.0, 1.0) * 255));
+}
+
+
+/**
+ * dia_colour_new_rgb:
+ * @r: Red component (0 <= r <= 1)
+ * @g: Green component (0 <= g <= 1)
+ * @b: Blue component (0 <= b <= 1)
+ *
+ * Allocate a new colour object with the given values.
+ * Initializes alpha component to 1.0
+ *
+ * Returns: (transfer full): A newly allocated colour object.
+ */
+DiaColour *
+dia_colour_new_rgb (float r, float g, float b)
+{
+  return dia_colour_new_rgba (r, g, b, 1.0);
+}
+
+
+/**
+ * dia_colour_new_rgba:
+ * @r: Red component (0 <= r <= 1)
+ * @g: Green component (0 <= g <= 1)
+ * @b: Blue component (0 <= b <= 1)
+ * @alpha: Alpha component (0 <= alpha <= 1)
+ *
+ * Allocate a new colour object with the given values.
+ *
+ * Returns: (transfer full): A newly allocated colour object.
+ */
+DiaColour *
+dia_colour_new_rgba (float r, float g, float b, float alpha)
+{
+  DiaColour *col = g_new (DiaColour, 1);
+  col->red = r;
+  col->green = g;
+  col->blue = b;
+  col->alpha = alpha;
+  return col;
+}
+
+
+/**
+ * dia_colour_as_gdk:
+ * @self: A #DiaColour object.
+ * @rgba: (out): #GdkRGBA to fill in.
+ *
+ * Convert a Dia colour object to GDK style.
+ */
+void
+dia_colour_as_gdk (DiaColour   *self,
+                   GdkRGBA     *rgba)
+{
+  rgba->red = self->red;
+  rgba->green = self->green;
+  rgba->blue = self->blue;
+  rgba->alpha = self->alpha;
+}
+
+
+/**
+ * dia_colour_from_gdk:
+ * @self: A #DiaColour object.
+ * @rgba: #GdkRGBA to copy from.
+ *
+ * Set a Dia colour object to match a #GdkRGBA.
+ */
+void
+dia_colour_from_gdk (DiaColour   *self,
+                     GdkRGBA     *rgba)
+{
+  self->red = rgba->red;
+  self->green = rgba->green;
+  self->blue = rgba->blue;
+  self->alpha = rgba->alpha;
+}
+
+
+/**
+ * dia_colour_equals:
+ * @colour_a: One #DiaColour object
+ * @colour_b: Another #DiaColour object.
+ *
+ * Compare two colour objects.
+ *
+ * Returns: %TRUE if the colour objects are the same colour.
+ */
+gboolean
+dia_colour_equals (DiaColour *colour_a, DiaColour *colour_b)
+{
+  return G_APPROX_VALUE (colour_a->red, colour_b->red, FLT_EPSILON) &&
+         G_APPROX_VALUE (colour_a->green, colour_b->green, FLT_EPSILON) &&
+         G_APPROX_VALUE (colour_a->blue, colour_b->blue, FLT_EPSILON) &&
+         G_APPROX_VALUE (colour_a->alpha, colour_b->alpha, FLT_EPSILON);
+}
+
+
+/**
+ * dia_colour_is_black:
+ * @self: a #DiaColour object
+ *
+ * Returns: %TRUE if the colour is solid black.
+ */
+gboolean
+dia_colour_is_black (DiaColour *self)
+{
+  return dia_colour_equals (self, &DIA_COLOUR_BLACK);
+}
+
+
+/**
+ * dia_colour_is_white:
+ * @self: a #DiaColour object
+ *
+ * Returns: %TRUE if the colour is solid white.
+ */
+gboolean
+dia_colour_is_white (DiaColour *self)
+{
+  return dia_colour_equals (self, &DIA_COLOUR_WHITE);
+}
