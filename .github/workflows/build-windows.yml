@@ -10,13 +10,8 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout do código (sem submódulos automáticos)
+    - name: Checkout do código
       uses: actions/checkout@v4
-
-    - name: Baixar submódulo xpm-pixbuf manualmente
-      shell: bash
-      run: |
-        git submodule update --init dia-master/subprojects/xpm-pixbuf || true
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
@@ -33,19 +28,28 @@ jobs:
           mingw-w64-ucrt-x86_64-libxml2
           diffutils
 
+    - name: Tratar subprojeto e ajustar dependências
+      shell: msys2 {0}
+      run: |
+        # Remove o diretório do subprojeto se estiver sem o meson.build
+        rm -rf dia-master/subprojects/xpm-pixbuf
+        
+        # Altera o meson.build para não travar na ausência do xpm-pixbuf
+        sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false/g" dia-master/meson.build
+
     - name: Compilar o Dia
       shell: msys2 {0}
       run: |
         cd dia-master
         rm -rf build-win
-        meson setup build-win -Dtests=false
+        meson setup build-win -Dtests=false --wrap-mode=nodownload
         ninja -C build-win
 
     - name: Empacotar para Windows 11 (Portátil com DLLs)
       shell: msys2 {0}
       run: |
         cd dia-master/build-win/app
-        # Copia todas as DLLs do ambiente UCRT64 para o executável rodar portátil no Windows 11
+        # Copia todas as DLLs do ambiente UCRT64 para o executável rodar de forma independente
         cp /ucrt64/bin/*.dll . 2>/dev/null || true
         zip -r dia-windows.zip .
 
