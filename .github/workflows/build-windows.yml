@@ -46,9 +46,13 @@ jobs:
         run: |
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
-          export LDFLAGS="-Wl,--export-all-symbols -Wl,--enable-auto-import"
 
-          meson setup builddir dia-master --buildtype=release --default-library=static -Ddoc=false
+          # Passa os argumentos de linkagem diretamente para o Meson exportar todos os símbolos nas DLLs
+          meson setup builddir dia-master \
+            --buildtype=release \
+            -Dc_link_args="-Wl,--export-all-symbols -Wl,--enable-auto-import" \
+            -Dcpp_link_args="-Wl,--export-all-symbols -Wl,--enable-auto-import" \
+            -Ddoc=false
 
       - name: Compilar Dia
         shell: msys2 {0}
