@@ -10,8 +10,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout do código
+    - name: Checkout do código (com submódulos)
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
@@ -28,18 +30,12 @@ jobs:
           mingw-w64-ucrt-x86_64-libxml2
           diffutils
 
-    - name: Remover subprojeto quebrado e ajustar dependências
-      shell: msys2 {0}
-      run: |
-        rm -rf dia-master/subprojects/xpm-pixbuf
-        sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false/g" dia-master/meson.build
-
     - name: Compilar o Dia
       shell: msys2 {0}
       run: |
         cd dia-master
         rm -rf build-win
-        meson setup build-win -Dtests=false --wrap-mode=nodownload
+        meson setup build-win -Dtests=false
         ninja -C build-win
 
     - name: Empacotar para Windows 11 (Portátil com DLLs)
