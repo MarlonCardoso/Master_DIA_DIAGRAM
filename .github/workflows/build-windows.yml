@@ -17,7 +17,7 @@ jobs:
       shell: bash
       run: |
         rm -rf dia-master/subprojects/xpm-pixbuf
-        sed -i "s/dependency('xpm-pixbuf'/dependency('xpm-pixbuf', required: false)/g" dia-master/meson.build
+        sed -i "s/dependency('xpm-pixbuf')/dependency('xpm-pixbuf', required: false)/g" dia-master/meson.build
 
     - name: Configurar MSYS2 no GitHub
       uses: msys2/setup-msys2@v2
