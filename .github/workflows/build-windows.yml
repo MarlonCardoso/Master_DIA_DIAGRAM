@@ -46,8 +46,9 @@ jobs:
         run: |
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
+          export LDFLAGS="-Wl,--export-all-symbols -Wl,--enable-auto-import"
 
-          meson setup builddir dia-master --buildtype=release -Ddoc=false
+          meson setup builddir dia-master --buildtype=release --default-library=static -Ddoc=false
 
       - name: Compilar Dia
         shell: msys2 {0}
