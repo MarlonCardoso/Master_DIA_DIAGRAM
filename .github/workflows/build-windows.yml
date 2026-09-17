@@ -2,7 +2,9 @@ name: Build Dia Windows (.exe)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
@@ -10,76 +12,55 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout do código
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Criar subprojeto xpm-pixbuf localmente
-      shell: bash
-      run: |
-        mkdir -p dia-master/subprojects/xpm-pixbuf
-        
-        # Cria o meson.build do subprojeto com o override necessário
-        cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/meson.build
-        project('xpm-pixbuf', 'c')
-        xpm_sources = ['xpm-pixbuf.c']
-        xpm_dep = declare_dependency(
-          include_directories : include_directories('.'),
-          sources : xpm_sources
-        )
-        meson.override_dependency('xpm-pixbuf', xpm_dep)
-        EOF
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-gtk3
+            mingw-w64-x86_64-libxml2
+            mingw-w64-x86_64-libxslt
+            mingw-w64-x86_64-gettext
+            mingw-w64-x86_64-poppler
+            mingw-w64-x86_64-cairo
+            mingw-w64-x86_64-pango
+            mingw-w64-x86_64-gsl
+            mingw-w64-x86_64-zlib
 
-        # Cria o cabeçalho xpm-pixbuf.h com o nome correto esperado pelo Dia
-        cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.h
-        #ifndef XPM_PIXBUF_H
-        #define XPM_PIXBUF_H
-        #include <gdk-pixbuf/gdk-pixbuf.h>
-        G_BEGIN_DECLS
-        GdkPixbuf *xpm_pixbuf_load(const gchar *data[]);
-        G_END_DECLS
-        #endif
-        EOF
+      - name: Configure Meson
+        shell: msys2 {0}
+        run: |
+          # Disable strict GCC checks for legacy C code compatibility
+          export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
+          export CXXFLAGS="$CFLAGS"
 
-        # Cria a implementação xpm-pixbuf.c apontando para a função do GdkPixbuf
-        cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.c
-        #include "xpm-pixbuf.h"
-        GdkPixbuf *xpm_pixbuf_load(const gchar *data[]) {
-            return gdk_pixbuf_new_from_xpm_data(data);
-        }
-        EOF
+          # Configure Meson without requiring XSPLT docbook tools
+          meson setup builddir --buildtype=release -Ddoc=false
 
-    - name: Configurar MSYS2 no GitHub
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: UCRT64
-        update: true
-        install: >-
-          mingw-w64-ucrt-x86_64-toolchain
-          mingw-w64-ucrt-x86_64-gtk3
-          mingw-w64-ucrt-x86_64-graphene
-          mingw-w64-ucrt-x86_64-appstream
-          mingw-w64-ucrt-x86_64-meson
-          mingw-w64-ucrt-x86_64-ninja
-          mingw-w64-ucrt-x86_64-libxml2
-          diffutils
+      - name: Compile Dia
+        shell: msys2 {0}
+        run: |
+          # Try parallel build first; fallback to single-thread (-j 1) on failure to print clear error
+          meson compile -C builddir || meson compile -C builddir -j 1
 
-    - name: Compilar o Dia
-      shell: msys2 {0}
-      run: |
-        cd dia-master
-        rm -rf build-win
-        meson setup build-win -Dtests=false --wrap-mode=nodownload
-        ninja -C build-win
+      - name: Install to Staging Directory
+        shell: msys2 {0}
+        run: |
+          meson install -C builddir --destdir output
 
-    - name: Empacotar para Windows 11 (Portátil com DLLs)
-      shell: msys2 {0}
-      run: |
-        cd dia-master/build-win/app
-        cp /ucrt64/bin/*.dll . 2>/dev/null || true
-        zip -r dia-windows.zip .
-
-    - name: Disponibilizar para Download
-      uses: actions/upload-artifact@v4
-      with:
-        name: Dia-Windows-Exe
-        path: dia-master/build-win/app/dia-windows.zip
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dia-Windows-x64-Build
+          path: builddir/output/
