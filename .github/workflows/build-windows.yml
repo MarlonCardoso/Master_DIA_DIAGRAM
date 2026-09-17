@@ -29,21 +29,21 @@ jobs:
         meson.override_dependency('xpm-pixbuf', xpm_dep)
         EOF
 
-        # Cria o cabeçalho xpm-pixbuf.h
+        # Cria o cabeçalho xpm-pixbuf.h com o nome correto esperado pelo Dia
         cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.h
         #ifndef XPM_PIXBUF_H
         #define XPM_PIXBUF_H
         #include <gdk-pixbuf/gdk-pixbuf.h>
         G_BEGIN_DECLS
-        GdkPixbuf *xpm_pixbuf_load_from_data(const gchar *data[]);
+        GdkPixbuf *xpm_pixbuf_load(const gchar *data[]);
         G_END_DECLS
         #endif
         EOF
 
-        # Cria a implementação xpm-pixbuf.c
+        # Cria a implementação xpm-pixbuf.c apontando para a função do GdkPixbuf
         cat << 'EOF' > dia-master/subprojects/xpm-pixbuf/xpm-pixbuf.c
         #include "xpm-pixbuf.h"
-        GdkPixbuf *xpm_pixbuf_load_from_data(const gchar *data[]) {
+        GdkPixbuf *xpm_pixbuf_load(const gchar *data[]) {
             return gdk_pixbuf_new_from_xpm_data(data);
         }
         EOF
