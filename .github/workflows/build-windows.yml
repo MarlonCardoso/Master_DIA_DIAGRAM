@@ -29,6 +29,7 @@ jobs:
             mingw-w64-x86_64-ninja
             mingw-w64-x86_64-pkg-config
             mingw-w64-x86_64-gtk3
+            mingw-w64-x86_64-graphene
             mingw-w64-x86_64-libxml2
             mingw-w64-x86_64-libxslt
             mingw-w64-x86_64-gettext
