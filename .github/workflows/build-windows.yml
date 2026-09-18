@@ -63,16 +63,22 @@ jobs:
         run: |
           meson compile -C builddir || meson compile -C builddir -j 1
 
-      - name: Instalar e Copiar Dependências
+- name: Instalar e Copiar Dependências
         shell: msys2 {0}
         run: |
           meson install -C builddir --destdir output
 
-          # Copia as DLLs do MSYS2 para junto do dia.exe para tornar a pasta portátil
-          BIN_DIR=$(find builddir/output -type d -name "bin" | head -n 1)
-          if [ -n "$BIN_DIR" ]; then
-            cp -u /mingw64/bin/*.dll "$BIN_DIR/" 2>/dev/null || true
-          fi
+          # Encontra o diretório base onde o dia.exe foi instalado
+          BIN_DIR=$(find output -type f -name "dia.exe" -exec dirname {} \;)
+          PREFIX_DIR=$(dirname "$BIN_DIR")
+
+          # Copia todas as DLLs de runtime para a pasta bin
+          cp -u /mingw64/bin/*.dll "$BIN_DIR/" 2>/dev/null || true
+
+          # Copia as pastas de recursos do GTK3 (ícones, schemas e módulos)
+          cp -ru /mingw64/share "$PREFIX_DIR/" 2>/dev/null || true
+          cp -ru /mingw64/lib "$PREFIX_DIR/" 2>/dev/null || true
+          cp -ru /mingw64/etc "$PREFIX_DIR/" 2>/dev/null || true
 
       - name: Upload do Artefato do Build
         uses: actions/upload-artifact@v4
