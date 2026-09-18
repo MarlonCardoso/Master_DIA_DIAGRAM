@@ -46,7 +46,6 @@ jobs:
           export CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=deprecated-declarations"
           export CXXFLAGS="$CFLAGS"
 
-          # Substitui o bundler problemático por um script neutro
           if [ -f dia-master/build-aux/windows-bundler.sh ]; then
             printf '#!/bin/sh\nexit 0\n' > dia-master/build-aux/windows-bundler.sh
             chmod +x dia-master/build-aux/windows-bundler.sh
@@ -63,19 +62,15 @@ jobs:
         run: |
           meson compile -C builddir || meson compile -C builddir -j 1
 
-- name: Instalar e Copiar Dependências
+      - name: Instalar e Copiar Dependências
         shell: msys2 {0}
         run: |
           meson install -C builddir --destdir output
 
-          # Encontra o diretório base onde o dia.exe foi instalado
           BIN_DIR=$(find output -type f -name "dia.exe" -exec dirname {} \;)
           PREFIX_DIR=$(dirname "$BIN_DIR")
 
-          # Copia todas as DLLs de runtime para a pasta bin
           cp -u /mingw64/bin/*.dll "$BIN_DIR/" 2>/dev/null || true
-
-          # Copia as pastas de recursos do GTK3 (ícones, schemas e módulos)
           cp -ru /mingw64/share "$PREFIX_DIR/" 2>/dev/null || true
           cp -ru /mingw64/lib "$PREFIX_DIR/" 2>/dev/null || true
           cp -ru /mingw64/etc "$PREFIX_DIR/" 2>/dev/null || true
